@@ -1,4 +1,3 @@
-
 import re
 import time
 import urllib
@@ -110,18 +109,25 @@ async def new_chat(chat_id=int, peer_id=int, owner_id=int):
     sql.execute(f"CREATE TABLE IF NOT EXISTS punishments_{chat_id} (user_id BIGINT, date TEXT);")
     database.commit()
 
-async def get_role(user_id = int, chat_id = int):
-    sql.execute(f"SELECT level FROM global_managers WHERE user_id = {user_id}")
+async def get_role(user_id: int, chat_id: int):
+    sql.execute("SELECT level FROM global_managers WHERE user_id = ?", (user_id,))
     fetch = sql.fetchone()
-    try:
-        if fetch[0] == 2: return 6
-    except:
-        sql.execute(f"SELECT owner_id FROM chats WHERE chat_id = {chat_id}")
-        if sql.fetchall()[0][0] == user_id: return 5
-        sql.execute(f"SELECT level FROM permissions_{chat_id} WHERE user_id = {user_id}")
-        fetch = sql.fetchone()
-        if fetch == None: return 0
-        else: return fetch[0]
+    if fetch and fetch[0] == 2:
+        return 6
+
+    sql.execute("SELECT owner_id FROM chats WHERE chat_id = ?", (chat_id,))
+    owner_id = sql.fetchone()[0]
+
+    if owner_id < 0:  
+        if await is_chat_admin(user_id, chat_id):
+            return 5
+
+    if owner_id == user_id:
+        return 5
+
+    sql.execute(f"SELECT level FROM permissions_{chat_id} WHERE user_id = ?", (user_id,))
+    fetch = sql.fetchone()
+    return fetch[0] if fetch else 0
 
 async def get_warns(user_id=int, chat_id=int):
     sql.execute(f"SELECT count FROM warns_{chat_id} WHERE user_id = {user_id}")
