@@ -118,9 +118,8 @@ async def get_role(user_id: int, chat_id: int):
     sql.execute("SELECT owner_id FROM chats WHERE chat_id = ?", (chat_id,))
     owner_id = sql.fetchone()[0]
 
-    if owner_id < 0:  
-        if await is_chat_admin(user_id, chat_id):
-            return 5
+    if owner_id < 0:
+        return 5  
 
     if owner_id == user_id:
         return 5
@@ -128,6 +127,7 @@ async def get_role(user_id: int, chat_id: int):
     sql.execute(f"SELECT level FROM permissions_{chat_id} WHERE user_id = ?", (user_id,))
     fetch = sql.fetchone()
     return fetch[0] if fetch else 0
+
 
 async def get_warns(user_id=int, chat_id=int):
     sql.execute(f"SELECT count FROM warns_{chat_id} WHERE user_id = {user_id}")
